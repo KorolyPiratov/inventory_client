@@ -43,7 +43,7 @@
               --main-jar inventory-client.jar `
               --main-class inventory_client.MainApp `
               --module-path target/deps `
-              --add-modules javafx.controls,javafx.fxml `
+              --add-modules javafx.controls,javafx.fxml,java.net.http `
               --type exe `
               --win-shortcut `
               --win-menu `
@@ -60,7 +60,7 @@
               --main-jar inventory-client.jar \
               --main-class inventory_client.MainApp \
               --module-path target/deps \
-              --add-modules javafx.controls,javafx.fxml \
+              --add-modules javafx.controls,javafx.fxml,java.net.http \
               --type dmg \
               --icon src/main/resources/icon.icns \
               --app-version "1.0.0" \
@@ -79,7 +79,7 @@
               --main-jar inventory-client.jar \
               --main-class inventory_client.MainApp \
               --module-path target/deps \
-              --add-modules javafx.controls,javafx.fxml \
+              --add-modules javafx.controls,javafx.fxml,java.net.http \
               --type deb \
               --icon src/main/resources/icon.png \
               --app-version "1.0.0" \
