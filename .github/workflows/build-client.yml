@@ -1,94 +1,93 @@
-name: Build Client Installers
+  name: Build Client Installers
 
-on:
-  push:
-    tags:
-      - 'v*'
-  workflow_dispatch:
+  on:
+    push:
+      tags:
+        - 'v*'
+    workflow_dispatch:
 
-jobs:
-  build:
-    strategy:
-      matrix:
-        include:
-          - os: windows-latest
-            label: windows
-          - os: macos-latest
-            label: mac
-          - os: ubuntu-latest
-            label: linux
+  jobs:
+    build:
+      strategy:
+        matrix:
+          include:
+            - os: windows-latest
+              label: windows
+            - os: macos-latest
+              label: mac
+            - os: ubuntu-latest
+              label: linux
 
-    runs-on: ${{ matrix.os }}
+      runs-on: ${{ matrix.os }}
 
-    steps:
-      - name: Checkout
-        uses: actions/checkout@v4
+      steps:
+        - name: Checkout
+          uses: actions/checkout@v4
 
-      - name: Setup JDK 21
-        uses: actions/setup-java@v4
-        with:
-          java-version: '21'
-          distribution: 'temurin'
+        - name: Setup JDK 21
+          uses: actions/setup-java@v4
+          with:
+            java-version: '21'
+            distribution: 'temurin'
 
-      - name: Build
-        working-directory: inventory-client
-        run: mvn clean package -DskipTests
+        - name: Build
+          run: mvn clean package -DskipTests
 
-      - name: Package (Windows)
-        if: matrix.os == 'windows-latest'
-        shell: pwsh
-        run: |
-          jpackage `
-          --input target `
-          --name "InventoryClient" `
-          --main-jar inventory-client.jar `
-          --main-class inventory_client.MainApp `
-          --module-path target/deps `
-          --add-modules javafx.controls,javafx.fxml `
-          --type exe `
-          --win-shortcut `
-          --win-menu `
-          --icon src/main/resources/icon.ico `
-          --app-version "1.0.0" `
-          --dest installer-output
+        - name: Package (Windows)
+          if: matrix.os == 'windows-latest'
+          shell: pwsh
+          run: |
+            jpackage `
+              --input target `
+              --name "InventoryClient" `
+              --main-jar inventory-client.jar `
+              --main-class inventory_client.MainApp `
+              --module-path target/deps `
+              --add-modules javafx.controls,javafx.fxml `
+              --type exe `
+              --win-shortcut `
+              --win-menu `
+              --icon src/main/resources/icon.ico `
+              --app-version "1.0.0" `
+              --dest installer-output
 
-          - name: Package (macOS)
-            if: matrix.os == 'macos-latest'
-            run: |
-              jpackage \
-                --input target \
-                --name "InventoryClient" \
-                --main-jar inventory-client.jar \
-                --main-class inventory_client.MainApp \
-                --module-path target/deps \
-                --add-modules javafx.controls,javafx.fxml \
-                --type dmg \
-                --icon src/main/resources/icon.icns \
-                --app-version "1.0.0" \
-                --dest installer-output
+        - name: Package (macOS)
+          if: matrix.os == 'macos-latest'
+          run: |
+            jpackage \
+              --input target \
+              --name "InventoryClient" \
+              --main-jar inventory-client.jar \
+              --main-class inventory_client.MainApp \
+              --module-path target/deps \
+              --add-modules javafx.controls,javafx.fxml \
+              --type dmg \
+              --icon src/main/resources/icon.icns \
+              --app-version "1.0.0" \
+              --dest installer-output
 
-          - name: Install fakeroot (Linux)
-            if: matrix.os == 'ubuntu-latest'
-            run: sudo apt-get install -y fakeroot
+        - name: Install fakeroot (Linux)
+          if: matrix.os == 'ubuntu-latest'
+          run: sudo apt-get install -y fakeroot
 
-          - name: Package (Linux)
-            if: matrix.os == 'ubuntu-latest'
-            run: |
-              jpackage \
-                --input target \
-                --name "inventory-client" \
-                --main-jar inventory-client.jar \
-                --main-class inventory_client.MainApp \
-                --module-path target/deps \
-                --add-modules javafx.controls,javafx.fxml \
-                --type deb \
-                --icon src/main/resources/icon.png \
-                --app-version "1.0.0" \
-                --dest installer-output
+        - name: Package (Linux)
+          if: matrix.os == 'ubuntu-latest'
+          run: |
+            jpackage \
+              --input target \
+              --name "inventory-client" \
+              --main-jar inventory-client.jar \
+              --main-class inventory_client.MainApp \
+              --module-path target/deps \
+              --add-modules javafx.controls,javafx.fxml \
+              --type deb \
+              --icon src/main/resources/icon.png \
+              --app-version "1.0.0" \
+              --dest installer-output
 
-          - name: Upload installer
-            uses: actions/upload-artifact@v4
-            with:
-              name: installer-${{ matrix.label }}
-              path: installer-output/
-              retention-days: 30
+        - name: Upload installer
+          uses: actions/upload-artifact@v4
+          with:
+            name: installer-${{ matrix.label }}
+            path: installer-output/
+            retention-days: 30
