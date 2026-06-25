@@ -4,6 +4,7 @@ import javafx.application.Application;
 import javafx.fxml.FXMLLoader;
 import javafx.scene.Scene;
 import javafx.stage.Stage;
+import inventory_client.service.ApiService;
 
 public class MainApp extends Application {
 
@@ -16,8 +17,20 @@ public class MainApp extends Application {
 		primaryStage.getIcons().add(
 				new javafx.scene.image.Image(
 						getClass().getResourceAsStream("/icon.png")));
-		showLoginScreen();
+		if (!ApiService.getInstance().hasServerIp()) {
+			showServerSetupScreen();
+		} else {
+			showLoginScreen();
+		}
+
 		primaryStage.show();
+	}
+
+	public static void showServerSetupScreen() throws Exception {
+		FXMLLoader loader = new FXMLLoader(
+				MainApp.class.getResource("/fxml/server_setup.fxml"));
+		Scene scene = new Scene(loader.load(), 400, 250);
+		primaryStage.setScene(scene);
 	}
 
 	public static void showLoginScreen() throws Exception {

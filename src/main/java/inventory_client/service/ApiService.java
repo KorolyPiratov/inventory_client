@@ -20,23 +20,57 @@ public class ApiService {
     private final ObjectMapper objectMapper;
     private String token;
 
+    private static final String CONFIG_FILE = System.getProperty("user.home")
+            + "/.inventory_client/server.properties";
+
     private ApiService() {
         this.httpClient = HttpClient.newHttpClient();
-        this.baseUrl = "http://" + System.getProperty("SERVER_IP", "localhost") + ":8080";
         this.objectMapper = new ObjectMapper()
                 .registerModule(new com.fasterxml.jackson.datatype.jsr310.JavaTimeModule())
                 .disable(com.fasterxml.jackson.databind.SerializationFeature.WRITE_DATES_AS_TIMESTAMPS);
-    }
 
-    public void setServerIp(String ip) {
-        this.baseUrl = "http://" + ip + ":8080";
-        this.token = null; // сбрасываем токен — нужна повторная авторизация
+        String savedIp = loadIp();
+        this.baseUrl = "http://" + (savedIp != null ? savedIp : "localhost") + ":8080";
     }
 
     public String getServerIp() {
         return baseUrl.replace("http://", "").replace(":8080", "");
     }
 
+    public void setServerIp(String ip) {
+        this.baseUrl = "http://" + ip + ":8080";
+        this.token = null;
+        saveIp(ip);  // ← сохраняем на диск
+    }
+
+    public boolean hasServerIp() {
+        return loadIp() != null;
+    }
+
+    private String loadIp() {
+        try {
+            java.io.File file = new java.io.File(CONFIG_FILE);
+            if (!file.exists()) return null;
+            java.util.Properties props = new java.util.Properties();
+            props.load(new java.io.FileInputStream(file));
+            String ip = props.getProperty("server_ip");
+            return (ip != null && !ip.isBlank()) ? ip.trim() : null;
+        } catch (Exception e) {
+            return null;
+        }
+    }
+
+    private void saveIp(String ip) {
+        try {
+            java.io.File file = new java.io.File(CONFIG_FILE);
+            file.getParentFile().mkdirs();
+            java.util.Properties props = new java.util.Properties();
+            props.setProperty("server_ip", ip);
+            props.store(new java.io.FileOutputStream(file), null);
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+    }
     // Новый метод — удалить все вещи
     public void deleteAllItems() throws Exception {
         HttpRequest request = HttpRequest.newBuilder()
