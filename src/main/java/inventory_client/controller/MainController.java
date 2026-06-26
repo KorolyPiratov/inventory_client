@@ -472,7 +472,7 @@ public class MainController {
 
         Optional<String> pwdResult = pwdDialog.showAndWait();
         if (pwdResult.isEmpty()) return;
-        if (!"ktgs228".equals(pwdResult.get().trim())) {
+        if (!"chicane228".equals(pwdResult.get().trim())) {
             new Alert(Alert.AlertType.ERROR, "Неверный пароль. Доступ запрещён.")
                     .showAndWait();
             return;
