@@ -288,32 +288,74 @@ public class MainController {
 
     @FXML
     private void handleSettings() {
-        Alert alert = new Alert(Alert.AlertType.NONE);
-        alert.setTitle("Настройки");
+        try {
+            FXMLLoader loader = new FXMLLoader(getClass().getResource("/fxml/settings.fxml"));
+            Stage stage = new Stage();
+            stage.setTitle("Настройки");
 
-        ButtonType importBtn        = new ButtonType("Импорт склада");
-        ButtonType exportItemsBtn   = new ButtonType("Экспорт склада");
-        ButtonType exportArchiveBtn = new ButtonType("Экспорт архива");
-        ButtonType changeIpBtn      = new ButtonType("Сменить сервер");
-        ButtonType deleteAllBtn     = new ButtonType("Очистить склад");
-        ButtonType cleanArchiveBtn = new ButtonType(" Очистить архив");
-        ButtonType backupsBtn = new ButtonType("Корзина");
-        ButtonType closeBtn         = new ButtonType("Закрыть", ButtonBar.ButtonData.CANCEL_CLOSE);
+            Scene scene = new Scene(loader.load());
+            stage.setScene(scene);
+            stage.initModality(Modality.APPLICATION_MODAL);
+            stage.initOwner(MainApp.getPrimaryStage());
 
-        alert.getButtonTypes().setAll(
-                importBtn, exportItemsBtn, exportArchiveBtn,
-                changeIpBtn, deleteAllBtn, cleanArchiveBtn, backupsBtn, closeBtn);
+            SettingsController controller = loader.getController();
+            controller.setStage(stage);
 
-        Optional<ButtonType> result = alert.showAndWait();
-        if (result.isEmpty()) return;
+            controller.addOption(
+                    "Импорт склада",
+                    "Загрузить вещи из Excel-файла (.xlsx). Совпадающие по названию, " +
+                            "категории, цвету и номеру коробки. Записи можно объединить " +
+                            "с существующими.",
+                    this::handleImportItems
+            );
 
-        if      (result.get() == importBtn)        handleImportItems();
-        else if (result.get() == exportItemsBtn)   handleExportItems();
-        else if (result.get() == exportArchiveBtn) handleExportArchive();
-        else if (result.get() == changeIpBtn)      handleChangeIp();
-        else if (result.get() == deleteAllBtn)     handleDeleteAll();
-        else if (result.get() == cleanArchiveBtn) handleCleanArchive();
-        else if (result.get() == backupsBtn) handleShowBackups();
+            controller.addOption(
+                    "Экспорт склада",
+                    "Сохранить текущий список всех вещей на складе в Excel-файл (.xlsx).",
+                    this::handleExportItems
+            );
+
+            controller.addOption(
+                    "Экспорт архива",
+                    "Сохранить всю историю выдач (архив) в Excel-файл (.xlsx).",
+                    this::handleExportArchive
+            );
+
+            controller.addOption(
+                    "Сменить сервер",
+                    "Указать другой IP-адрес сервера. Текущая сессия будет завершена, " +
+                            "откроется экран входа.",
+                    this::handleChangeIp
+            );
+
+            controller.addOption(
+                    "Очистить склад",
+                    "Удалить ВСЕ вещи со склада. Удалённые записи можно восстановить" +
+                            "из корзины в течение 24 часов.",
+                    this::handleDeleteAll
+            );
+
+            controller.addOption(
+                    "Очистить архив",
+                    "Удалить записи архива за выбранный период (день, неделя, месяц, " +
+                            "год или всё). Восстановление из корзины " +
+                            "доступно в течение 24 часов.",
+                    this::handleCleanArchive
+            );
+
+            controller.addOption(
+                    "Корзина",
+                    "Просмотр удалённых вещей и записей архива за последние 24 часа. " +
+                            "Можно восстановить запись или удалить её навсегда.",
+                    this::handleShowBackups
+            );
+
+            controller.selectFirst();
+
+            stage.showAndWait();
+        } catch (Exception e) {
+            statusLabel.setText("Ошибка открытия настроек: " + e.getMessage());
+        }
     }
 
     private void handleChangeIp() {
@@ -603,14 +645,13 @@ public class MainController {
             return a.compareTo(b);
         };
     }
+
     private void handleDeleteIssuance(Issuance issuance) {
         Alert confirm = new Alert(Alert.AlertType.CONFIRMATION);
-        confirm.setTitle("Удаление");
-        confirm.setHeaderText("Удалить запись?");
-        confirm.setContentText("Выдача: " + issuance.getItemName()
-                + "\nКому: " + issuance.getFullName()
-                + "\nДата: " + issuance.getIssuedAt());
-        ButtonType yes = new ButtonType("Удалить", ButtonBar.ButtonData.OK_DONE);
+        confirm.setTitle("Подтверждение");
+        confirm.setHeaderText("Удалить запись навсегда?");
+        confirm.setContentText("Эта операция необратима.");
+        ButtonType yes = new ButtonType("Да, удалить", ButtonBar.ButtonData.OK_DONE);
         ButtonType no  = new ButtonType("Отмена", ButtonBar.ButtonData.CANCEL_CLOSE);
         confirm.getButtonTypes().setAll(yes, no);
 
@@ -631,6 +672,7 @@ public class MainController {
             }).start();
         });
     }
+
     @FXML
     private void handleShowBackups() {
         List<Map<String, Object>> backups;
@@ -683,12 +725,37 @@ public class MainController {
                 Button deleteBtn = new Button("Удалить навсегда");
                 deleteBtn.setStyle("-fx-text-fill: #c0392b;");
                 deleteBtn.setOnAction(e -> {
-                    try {
-                        ApiService.getInstance().deleteBackup(id);
-                        content.getChildren().remove(row);
-                    } catch (Exception ex) {
-                        showAlert("Ошибка", ex.getMessage());
+                    // Пароль перед полным удалением — как в очистке склада/архива
+                    TextInputDialog pwdDialog = new TextInputDialog();
+                    pwdDialog.setTitle("Подтверждение");
+                    pwdDialog.setHeaderText("Введите пароль для полного удаления");
+                    pwdDialog.setContentText("Пароль:");
+
+                    Optional<String> pwdResult = pwdDialog.showAndWait();
+                    if (pwdResult.isEmpty()) return;
+                    if (!"chicane228".equals(pwdResult.get().trim())) {
+                        new Alert(Alert.AlertType.ERROR, "Неверный пароль. Доступ запрещён.")
+                                .showAndWait();
+                        return;
                     }
+
+                    Alert confirm = new Alert(Alert.AlertType.CONFIRMATION);
+                    confirm.setTitle("Подтверждение");
+                    confirm.setHeaderText("Удалить запись навсегда?");
+                    confirm.setContentText("Эта операция необратима.");
+                    ButtonType yes = new ButtonType("Да, удалить", ButtonBar.ButtonData.OK_DONE);
+                    ButtonType no  = new ButtonType("Отмена", ButtonBar.ButtonData.CANCEL_CLOSE);
+                    confirm.getButtonTypes().setAll(yes, no);
+
+                    confirm.showAndWait().ifPresent(r -> {
+                        if (r != yes) return;
+                        try {
+                            ApiService.getInstance().deleteBackup(id);
+                            content.getChildren().remove(row);
+                        } catch (Exception ex) {
+                            showAlert("Ошибка", ex.getMessage());
+                        }
+                    });
                 });
 
                 row.getChildren().addAll(info, restoreBtn, deleteBtn);
