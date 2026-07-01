@@ -43,7 +43,7 @@ public class MainApp extends Application {
 	public static void showMainScreen() throws Exception {
 		FXMLLoader loader = new FXMLLoader(
 				MainApp.class.getResource("/fxml/main.fxml"));
-		Scene scene = new Scene(loader.load(), 1000, 650);
+		Scene scene = new Scene(loader.load(), 1100, 650);
 		primaryStage.setScene(scene);
 	}
 

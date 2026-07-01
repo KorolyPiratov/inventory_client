@@ -569,7 +569,7 @@ public class MainController {
             FXMLLoader loader = new FXMLLoader(getClass().getResource("/fxml/item_detail.fxml"));
             Stage stage = new Stage();
             stage.setTitle(selected.getName());
-            stage.setScene(new Scene(loader.load(), 500, 500));
+            stage.setScene(new Scene(loader.load(), 500, 600));
             stage.initModality(Modality.APPLICATION_MODAL);
             stage.initOwner(MainApp.getPrimaryStage());
             ((ItemDetailController) loader.getController()).setItem(selected);
@@ -586,7 +586,7 @@ public class MainController {
             FXMLLoader loader = new FXMLLoader(getClass().getResource("/fxml/item_form.fxml"));
             Stage stage = new Stage();
             stage.setTitle("Добавить вещь");
-            stage.setScene(new Scene(loader.load(), 470, 660));
+            stage.setScene(new Scene(loader.load(), 470, 700));
             stage.initModality(Modality.APPLICATION_MODAL);
             stage.initOwner(MainApp.getPrimaryStage());
             stage.showAndWait();
@@ -765,7 +765,7 @@ public class MainController {
 
         ScrollPane scroll = new ScrollPane(content);
         scroll.setFitToWidth(true);
-        scroll.setPrefHeight(420);
+        scroll.setPrefHeight(460);
         scroll.setPrefWidth(600);
 
         dialog.getDialogPane().setContent(scroll);
